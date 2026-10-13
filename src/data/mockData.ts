@@ -3,38 +3,97 @@ import {
   ClosetItem,
   Outfit,
   JournalEntry,
-  Insight,
+  WardrobeAnalytics,
   Post,
   Retailer,
   AdminAuditLog
 } from '../types';
 
-export const initialUser: UserProfile = {
-  uid: 'usr_me_001',
-  email: 'fashionista@mefe.app',
-  displayName: 'Camille Lauren',
-  photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-  bio: 'Mindful style curator | Finding emotional freedom through conscious fashion 🌿',
-  role: 'admin', // defaulted to admin so all capabilities and dashboard can be experienced immediately
-  isPremium: true,
-  preferredLanguage: 'en',
-  status: {
-    state: 'active',
-    until: null,
-    reason: ''
+export const mockUsers: UserProfile[] = [
+  {
+    uid: 'usr_me_001',
+    email: 'camille@mefe.app',
+    displayName: 'Camille Lauren',
+    photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    bio: 'Mindful style curator | Finding emotional freedom through conscious fashion 🌿',
+    role: 'admin',
+    isPremium: true,
+    preferredLanguage: 'en',
+    status: {
+      state: 'active',
+      until: null,
+      reason: ''
+    },
+    avatarConfig: {
+      baseModelId: 'mannequin_classic',
+      skinTone: '#E4B698', // Warm Ivory / Terracotta Glow
+      hairStyle: 'sleek_bob',
+      hairColor: '#3C2F2F', // Cocoa Espresso
+      canvasScale: 1,
+      bodyType: 'classic'
+    },
+    followersCount: 1240,
+    followingCount: 382,
+    createdAt: '2026-01-15T09:00:00Z',
+    updatedAt: '2026-10-13T12:00:00Z'
   },
-  avatarConfig: {
-    baseModelId: 'cher_classic',
-    skinTone: '#E4B698', // Warm Ivory / Terracotta Glow
-    hairStyle: 'sleek_bob',
-    hairColor: '#3C2F2F', // Cocoa Espresso
-    canvasScale: 1
+  {
+    uid: 'usr_friend_01',
+    email: 'elena@mefe.app',
+    displayName: 'Elena Vance',
+    photoURL: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+    bio: 'Architect & Minimalist | Wardrobe capsules in earthy neutrals 🤎',
+    role: 'user',
+    isPremium: true,
+    preferredLanguage: 'en',
+    status: {
+      state: 'active',
+      until: null,
+      reason: ''
+    },
+    avatarConfig: {
+      baseModelId: 'mannequin_athletic',
+      skinTone: '#F8E4D9',
+      hairStyle: 'waves',
+      hairColor: '#C68B45',
+      canvasScale: 1,
+      bodyType: 'athletic'
+    },
+    followersCount: 890,
+    followingCount: 210,
+    createdAt: '2026-02-10T11:00:00Z',
+    updatedAt: '2026-10-10T14:00:00Z'
   },
-  followersCount: 1240,
-  followingCount: 382,
-  createdAt: '2026-01-15T09:00:00Z',
-  updatedAt: '2026-10-13T12:00:00Z'
-};
+  {
+    uid: 'usr_friend_02',
+    email: 'marcus@mefe.app',
+    displayName: 'Marcus Sterling',
+    photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+    bio: 'Tailoring enthusiast & Creative Director | Earthy tones advocate 🍂',
+    role: 'user',
+    isPremium: false,
+    preferredLanguage: 'en',
+    status: {
+      state: 'active',
+      until: null,
+      reason: ''
+    },
+    avatarConfig: {
+      baseModelId: 'mannequin_classic',
+      skinTone: '#C98565',
+      hairStyle: 'pixie',
+      hairColor: '#3C2F2F',
+      canvasScale: 1,
+      bodyType: 'classic'
+    },
+    followersCount: 540,
+    followingCount: 160,
+    createdAt: '2026-03-01T10:00:00Z',
+    updatedAt: '2026-10-08T09:00:00Z'
+  }
+];
+
+export const initialUser: UserProfile = mockUsers[0];
 
 export const initialClosetItems: ClosetItem[] = [
   {
@@ -156,6 +215,37 @@ export const initialClosetItems: ClosetItem[] = [
     lastWornAt: '2026-10-07T12:00:00Z',
     searchKeywords: ['jeans', 'denim', 'indigo', 'high-rise', 'pants'],
     createdAt: '2026-02-18T14:00:00Z'
+  },
+  // Elena's items
+  {
+    itemId: 'item_101',
+    userId: 'usr_friend_01',
+    name: 'Oatmeal Wool Trench Coat',
+    imageUrl: 'https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=800&q=80',
+    transparentPngUrl: null,
+    category: 'outerwear',
+    colors: ['oatmeal', 'beige'],
+    useCases: ['work', 'travel'],
+    emotionalTags: ['focused', 'architectural'],
+    wearCount: 16,
+    lastWornAt: '2026-10-09T09:00:00Z',
+    searchKeywords: ['coat', 'trench', 'wool'],
+    createdAt: '2026-02-15T10:00:00Z'
+  },
+  {
+    itemId: 'item_102',
+    userId: 'usr_friend_01',
+    name: 'Charcoal Pleated Midi Skirt',
+    imageUrl: 'https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?auto=format&fit=crop&w=800&q=80',
+    transparentPngUrl: null,
+    category: 'bottoms',
+    colors: ['charcoal', 'grey'],
+    useCases: ['dinner', 'work'],
+    emotionalTags: ['minimalist', 'composed'],
+    wearCount: 10,
+    lastWornAt: '2026-10-08T18:00:00Z',
+    searchKeywords: ['skirt', 'pleated'],
+    createdAt: '2026-03-01T12:00:00Z'
   }
 ];
 
@@ -224,7 +314,6 @@ export const initialJournalEntries: JournalEntry[] = [
     wornItemIds: ['item_001', 'item_002', 'item_003', 'item_005'],
     entryText: 'Keynote presentation went flawlessly! Wearing the Vintage Terracotta Blazer gave me an immediate sense of posture and grounded authority. Several colleagues complimented the warm color balance.',
     sentimentScore: 0.92,
-    aiProcessed: true,
     createdAt: '2026-10-12T19:30:00Z'
   },
   {
@@ -237,7 +326,6 @@ export const initialJournalEntries: JournalEntry[] = [
     wornItemIds: ['item_004', 'item_001', 'item_006'],
     entryText: 'Evening gallery vernissage. The amber silk dress paired with warm gold crescent earrings felt effortless and luminous. Felt completely in my element mingling with curators.',
     sentimentScore: 0.85,
-    aiProcessed: true,
     createdAt: '2026-10-10T22:15:00Z'
   },
   {
@@ -250,7 +338,6 @@ export const initialJournalEntries: JournalEntry[] = [
     wornItemIds: ['item_002', 'item_008', 'item_007'],
     entryText: 'Rainy afternoon writing session at the café. The cocoa knit and cashmere wrap felt like an embrace of warmth. Lower sensory overstimulation helped me finish the draft.',
     sentimentScore: 0.74,
-    aiProcessed: true,
     createdAt: '2026-10-08T17:40:00Z'
   },
   {
@@ -263,29 +350,9 @@ export const initialJournalEntries: JournalEntry[] = [
     wornItemIds: ['item_001', 'item_002', 'item_003'],
     entryText: 'Thursday strategy sprint. Again, the terracotta blazer proved its psychological anchor value. Noticeable surge in clarity whenever I wear sharp tailored blazers in earthy reds.',
     sentimentScore: 0.89,
-    aiProcessed: true,
     createdAt: '2026-10-05T20:00:00Z'
   }
 ];
-
-export const initialInsights: Insight = {
-  insightId: 'ins_001',
-  userId: 'usr_me_001',
-  period: 'all_time',
-  startDate: '2026-10-01',
-  endDate: '2026-10-13',
-  powerColor: 'Terracotta Red (#E2725B)',
-  topOutfitId: 'outfit_001',
-  categoryCorrelations: {
-    outerwear: { 'Blazers': 8.9, 'Coats': 7.6, 'Cardigans': 7.1 },
-    tops: { 'Turtlenecks': 8.2, 'Silk Shirts': 7.9, 'Tees': 6.2 },
-    bottoms: { 'Wide-Leg Trousers': 8.7, 'Denim': 7.3, 'Skirts': 6.8 },
-    dresses: { 'Silk Slips': 8.4, 'Knit Dresses': 7.5 }
-  },
-  aiNarrativeSummary: 'MEFE noticed your confidence peaks on Thursdays when wearing warm tones like your Vintage Terracotta Blazer and Amber Silks. Across 18 journal check-ins, outfits incorporating terracotta and cocoa tones generated an average mood score of 8.8/10 (compared to 6.4/10 on monochromatic black/grey days). The structural silhouette of tailored outerwear strongly correlates with emotional grounding during negotiations.',
-  actionableTip: 'Schedule your Terracotta Blazer or Sunset Amber dress for upcoming high-stakes presentations or Thursday meetings to optimize natural presence and self-assurance.',
-  generatedAt: '2026-10-13T10:00:00Z'
-};
 
 export const initialPosts: Post[] = [
   {
@@ -348,11 +415,11 @@ export const initialPosts: Post[] = [
   },
   {
     postId: 'post_003',
-    authorId: 'usr_friend_03',
-    authorDisplayName: 'Sophie Dubois',
-    authorPhotoURL: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
+    authorId: 'usr_friend_02',
+    authorDisplayName: 'Marcus Sterling',
+    authorPhotoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
     mediaUrl: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=900&q=80',
-    caption: 'Silk slip dresses and gold jewelry for crisp autumn evenings. Mood score today was a solid 10/10! 🥂💫',
+    caption: 'Silk layers and tailored lines for crisp autumn evenings. Grounded and focused. 🥂💫',
     outfitId: null,
     taggedItemCount: 3,
     likeCount: 165,
@@ -423,7 +490,7 @@ export const initialAuditLogs: AdminAuditLog[] = [
     targetUserId: 'usr_friend_01',
     actionType: 'SET_PREMIUM',
     details: {
-      reason: 'Enrolled in Beta Pro cohort for Gemini Studio insights testing',
+      reason: 'Enrolled in Pro cohort for wardrobe analytics',
       priorStatus: 'free_tier'
     },
     timestamp: '2026-10-02T14:15:00Z'

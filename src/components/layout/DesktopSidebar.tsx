@@ -4,11 +4,13 @@ import {
   Sparkles,
   Layers,
   BookHeart,
-  BrainCircuit,
+  BarChart3,
   UserCheck,
   ShoppingBag,
   Shield,
-  Settings
+  Settings,
+  LogOut,
+  Users
 } from 'lucide-react';
 import { ActiveTab, MenuSubView, UserProfile } from '../../types';
 import { useTranslation } from '../../i18n';
@@ -16,9 +18,11 @@ import { useTranslation } from '../../i18n';
 interface DesktopSidebarProps {
   activeTab: ActiveTab;
   menuSubView: MenuSubView;
-  user: UserProfile;
+  user: UserProfile | null;
   onTabChange: (tab: ActiveTab, subView?: MenuSubView) => void;
   onOpenSettings: () => void;
+  onOpenAuth: () => void;
+  onSignOut: () => void;
 }
 
 export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
@@ -27,22 +31,24 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
   user,
   onTabChange,
   onOpenSettings,
+  onOpenAuth,
+  onSignOut
 }) => {
   const { t } = useTranslation();
 
   const mainNavItems = [
-    { id: 'social' as ActiveTab, label: t('navSocial'), icon: Home },
-    { id: 'closet' as ActiveTab, label: t('navCloset'), icon: Sparkles },
-    { id: 'outfits' as ActiveTab, label: t('navOutfits'), icon: Layers },
-    { id: 'journal' as ActiveTab, label: t('navJournal'), icon: BookHeart },
+    { id: 'social' as ActiveTab, label: 'Social Feed', icon: Home },
+    { id: 'closet' as ActiveTab, label: 'My Closet', icon: Sparkles },
+    { id: 'outfits' as ActiveTab, label: 'Outfits & Calendar', icon: Layers },
+    { id: 'journal' as ActiveTab, label: 'Mood Journal', icon: BookHeart },
   ];
 
   const subNavItems = [
-    { id: 'insights' as MenuSubView, label: t('navInsights'), icon: BrainCircuit, badge: 'AI' },
-    { id: 'avatar' as MenuSubView, label: t('navAvatar'), icon: UserCheck, badge: '90s' },
-    { id: 'retailers' as MenuSubView, label: t('navRetailers'), icon: ShoppingBag },
-    ...(user.role === 'admin'
-      ? [{ id: 'admin' as MenuSubView, label: t('navAdmin'), icon: Shield, badge: 'Admin' }]
+    { id: 'insights' as MenuSubView, label: 'Wardrobe Analytics', icon: BarChart3, badge: 'Stats' },
+    { id: 'avatar' as MenuSubView, label: '3D Avatar Studio', icon: UserCheck, badge: 'Three.js' },
+    { id: 'retailers' as MenuSubView, label: 'Shop the Look', icon: ShoppingBag },
+    ...(user && user.role === 'admin'
+      ? [{ id: 'admin' as MenuSubView, label: 'Admin Dashboard', icon: Shield, badge: 'Admin' }]
       : []),
   ];
 
@@ -59,7 +65,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
               MEFE
             </h1>
             <p className="text-[11px] font-medium text-terracotta-600 tracking-wide uppercase mt-0.5">
-              Wardrobe & Mood AI
+              Wardrobe & Mood Studio
             </p>
           </div>
         </div>
@@ -89,10 +95,10 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
           })}
         </nav>
 
-        {/* Special AI & Studio Features */}
+        {/* 3D Studio & Analytics Navigation */}
         <div className="space-y-1 pt-2 border-t border-warm-border">
           <p className="text-[11px] font-bold uppercase tracking-wider text-cocoa-400 px-3 py-1">
-            AI Brain & Studios
+            3D Studio & Analytics
           </p>
           {subNavItems.map((item) => {
             const Icon = item.icon;
@@ -128,29 +134,58 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
         </div>
       </div>
 
-      {/* User Profile Footer Card */}
-      <div className="p-3 bg-warm-50 rounded-2xl border border-warm-border flex items-center justify-between">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <img
-            src={user.photoURL}
-            alt={user.displayName}
-            className="w-9 h-9 rounded-full object-cover ring-2 ring-terracotta-400/40"
-          />
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-cocoa-900 truncate">{user.displayName}</p>
-            <p className="text-[11px] text-cocoa-400 truncate">
-              {user.isPremium ? '★ Pro Member' : 'Free Tier'}
-            </p>
+      {/* User Profile Card & Sign In / Sign Out Controls */}
+      {user ? (
+        <div className="p-3 bg-warm-50 rounded-2xl border border-warm-border space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <img
+                src={user.photoURL}
+                alt={user.displayName}
+                className="w-9 h-9 rounded-full object-cover ring-2 ring-terracotta-400/40"
+              />
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-cocoa-900 truncate">{user.displayName}</p>
+                <p className="text-[10px] text-cocoa-400 truncate">{user.email}</p>
+              </div>
+            </div>
+
+            <button
+              onClick={onOpenSettings}
+              title="Settings"
+              className="p-1.5 text-cocoa-400 hover:text-cocoa-700 hover:bg-warm-200 rounded-xl transition-colors"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Account Actions: Switch User & Sign Out */}
+          <div className="flex items-center gap-1.5 pt-1 border-t border-warm-border">
+            <button
+              onClick={onOpenAuth}
+              className="flex-1 py-1 px-2 rounded-xl bg-warm-200/70 hover:bg-warm-200 text-cocoa-700 font-semibold text-[11px] flex items-center justify-center gap-1 transition-colors"
+            >
+              <Users className="w-3.5 h-3.5 text-terracotta-600" />
+              <span>Switch User</span>
+            </button>
+            <button
+              onClick={onSignOut}
+              className="py-1 px-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-[11px] flex items-center justify-center gap-1 transition-colors"
+              title="Sign Out"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out</span>
+            </button>
           </div>
         </div>
+      ) : (
         <button
-          onClick={onOpenSettings}
-          title={t('navSettings')}
-          className="p-1.5 text-cocoa-400 hover:text-cocoa-700 hover:bg-warm-200 rounded-xl transition-colors"
+          onClick={onOpenAuth}
+          className="w-full py-3 rounded-2xl bg-terracotta-500 hover:bg-terracotta-600 text-white font-bold text-xs shadow-terracotta transition-all"
         >
-          <Settings className="w-4 h-4" />
+          Sign In / Create Account
         </button>
-      </div>
+      )}
     </aside>
   );
 };

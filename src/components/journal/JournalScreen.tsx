@@ -82,8 +82,7 @@ export const JournalScreen: React.FC<JournalScreenProps> = ({
       outfitId: selectedOutfitId,
       wornItemIds: finalWornItemIds,
       entryText: entryText.trim(),
-      sentimentScore: normalizedSentiment,
-      aiProcessed: false
+      sentimentScore: normalizedSentiment
     });
 
     // Trigger celebration confetti!

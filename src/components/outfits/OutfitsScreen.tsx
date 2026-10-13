@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Layers, Calendar as CalendarIcon, Sparkles, UserCheck } from 'lucide-react';
+import { Layers, Calendar as CalendarIcon, Sparkles } from 'lucide-react';
 import { ClosetItem, Outfit, UserProfile } from '../../types';
 import { useTranslation } from '../../i18n';
 import { OutfitBuilder } from './OutfitBuilder';
 import { OutfitCalendar } from './OutfitCalendar';
-import { CluelessAvatarStudio } from '../avatar/CluelessAvatarStudio';
+import { ThreeAvatarStudio } from '../avatar/ThreeAvatarStudio';
 
 interface OutfitsScreenProps {
   closetItems: ClosetItem[];
@@ -82,18 +82,18 @@ export const OutfitsScreen: React.FC<OutfitsScreenProps> = ({
         />
       )}
 
-      {/* Floating Action Button (FAB): The 'Clueless' Avatar Studio */}
+      {/* Floating Action Button (FAB): 3D Avatar Studio */}
       <button
         onClick={() => setIsAvatarStudioOpen(true)}
         className="fixed bottom-20 md:bottom-8 right-4 md:right-8 z-30 flex items-center gap-2.5 px-5 py-3.5 rounded-full bg-gradient-to-r from-terracotta-500 to-terracotta-700 text-white font-bold text-xs sm:text-sm shadow-warm-lg hover:shadow-2xl hover:scale-105 active:scale-95 transition-all border-2 border-white/80 group"
       >
         <Sparkles className="w-4 h-4 text-amber-200 group-hover:rotate-12 transition-transform" />
-        <span>{t('launchAvatarFab')}</span>
+        <span>3D Avatar Studio</span>
       </button>
 
-      {/* Clueless Avatar Studio Modal */}
+      {/* Three.js 3D Avatar Studio Viewport */}
       {isAvatarStudioOpen && (
-        <CluelessAvatarStudio
+        <ThreeAvatarStudio
           closetItems={closetItems}
           user={user}
           onSaveOutfit={onSaveOutfit}

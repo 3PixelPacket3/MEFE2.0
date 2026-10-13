@@ -3,7 +3,6 @@ import {
   ClosetItem,
   Outfit,
   JournalEntry,
-  Insight,
   Post,
   Retailer,
   AdminAuditLog,
@@ -11,69 +10,62 @@ import {
   UserStatusState
 } from '../types';
 import {
-  initialUser,
   initialClosetItems,
   initialOutfits,
   initialJournalEntries,
-  initialInsights,
   initialPosts,
   initialRetailers,
   initialAuditLogs
 } from '../data/mockData';
+import { authService } from './auth';
 
 const KEYS = {
-  USER: 'mefe_user_profile',
   CLOSET: 'mefe_closet_items',
   OUTFITS: 'mefe_outfits',
   JOURNAL: 'mefe_journal_entries',
-  INSIGHTS: 'mefe_insights',
   POSTS: 'mefe_posts',
   RETAILERS: 'mefe_retailers',
   LOGS: 'mefe_audit_logs',
 };
 
 class StorageService {
-  // User Profile
+  // Current active user
   getUser(): UserProfile {
-    try {
-      const raw = localStorage.getItem(KEYS.USER);
-      if (raw) return JSON.parse(raw);
-    } catch (e) {
-      console.error(e);
-    }
-    this.saveUser(initialUser);
-    return initialUser;
+    return authService.getCurrentUser() || authService.getAllUsers()[0];
   }
 
   saveUser(user: UserProfile): void {
-    localStorage.setItem(KEYS.USER, JSON.stringify(user));
+    authService.updateProfile(user);
   }
 
   updateUserProfile(updates: Partial<UserProfile>): UserProfile {
-    const current = this.getUser();
-    const updated = { ...current, ...updates, updatedAt: new Date().toISOString() };
-    this.saveUser(updated);
-    return updated;
+    return authService.updateProfile(updates) || this.getUser();
   }
 
   // Closet Items
-  getClosetItems(): ClosetItem[] {
+  getAllClosetItems(): ClosetItem[] {
     try {
       const raw = localStorage.getItem(KEYS.CLOSET);
       if (raw) return JSON.parse(raw);
     } catch (e) {
       console.error(e);
     }
-    this.saveClosetItems(initialClosetItems);
+    this.saveAllClosetItems(initialClosetItems);
     return initialClosetItems;
   }
 
-  saveClosetItems(items: ClosetItem[]): void {
+  saveAllClosetItems(items: ClosetItem[]): void {
     localStorage.setItem(KEYS.CLOSET, JSON.stringify(items));
   }
 
+  getClosetItems(userId?: string): ClosetItem[] {
+    const targetUid = userId || this.getUser()?.uid;
+    const all = this.getAllClosetItems();
+    return targetUid ? all.filter(i => i.userId === targetUid) : all;
+  }
+
   addClosetItem(item: Omit<ClosetItem, 'itemId' | 'createdAt' | 'wearCount' | 'lastWornAt'>): ClosetItem {
-    const items = this.getClosetItems();
+    const all = this.getAllClosetItems();
     const newItem: ClosetItem = {
       ...item,
       itemId: 'item_' + Date.now(),
@@ -81,65 +73,70 @@ class StorageService {
       lastWornAt: null,
       createdAt: new Date().toISOString()
     };
-    items.unshift(newItem);
-    this.saveClosetItems(items);
+    all.unshift(newItem);
+    this.saveAllClosetItems(all);
     return newItem;
   }
 
   updateClosetItem(itemId: string, updates: Partial<ClosetItem>): ClosetItem | null {
-    const items = this.getClosetItems();
-    const index = items.findIndex(i => i.itemId === itemId);
+    const all = this.getAllClosetItems();
+    const index = all.findIndex(i => i.itemId === itemId);
     if (index === -1) return null;
-    items[index] = { ...items[index], ...updates };
-    this.saveClosetItems(items);
-    return items[index];
+    all[index] = { ...all[index], ...updates };
+    this.saveAllClosetItems(all);
+    return all[index];
   }
 
   deleteClosetItem(itemId: string): void {
-    const items = this.getClosetItems().filter(i => i.itemId !== itemId);
-    this.saveClosetItems(items);
+    const all = this.getAllClosetItems().filter(i => i.itemId !== itemId);
+    this.saveAllClosetItems(all);
   }
 
   incrementWearCount(itemIds: string[]): void {
-    const items = this.getClosetItems();
+    const all = this.getAllClosetItems();
     const now = new Date().toISOString();
-    items.forEach(item => {
+    all.forEach(item => {
       if (itemIds.includes(item.itemId)) {
         item.wearCount = (item.wearCount || 0) + 1;
         item.lastWornAt = now;
       }
     });
-    this.saveClosetItems(items);
+    this.saveAllClosetItems(all);
   }
 
   // Outfits
-  getOutfits(): Outfit[] {
+  getAllOutfits(): Outfit[] {
     try {
       const raw = localStorage.getItem(KEYS.OUTFITS);
       if (raw) return JSON.parse(raw);
     } catch (e) {
       console.error(e);
     }
-    this.saveOutfits(initialOutfits);
+    this.saveAllOutfits(initialOutfits);
     return initialOutfits;
   }
 
-  saveOutfits(outfits: Outfit[]): void {
+  saveAllOutfits(outfits: Outfit[]): void {
     localStorage.setItem(KEYS.OUTFITS, JSON.stringify(outfits));
   }
 
+  getOutfits(userId?: string): Outfit[] {
+    const targetUid = userId || this.getUser()?.uid;
+    const all = this.getAllOutfits();
+    return targetUid ? all.filter(o => o.userId === targetUid) : all;
+  }
+
   addOutfit(outfit: Omit<Outfit, 'outfitId' | 'createdAt' | 'updatedAt'>): Outfit {
-    const outfits = this.getOutfits();
+    const all = this.getAllOutfits();
     const newOutfit: Outfit = {
       ...outfit,
       outfitId: 'outfit_' + Date.now(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
-    outfits.unshift(newOutfit);
-    this.saveOutfits(outfits);
+    all.unshift(newOutfit);
+    this.saveAllOutfits(all);
 
-    // If scheduled for today, increment wear
     const today = new Date().toISOString().split('T')[0];
     if (newOutfit.scheduledDates.includes(today)) {
       this.incrementWearCount(newOutfit.itemIds);
@@ -148,68 +145,58 @@ class StorageService {
   }
 
   deleteOutfit(outfitId: string): void {
-    const outfits = this.getOutfits().filter(o => o.outfitId !== outfitId);
-    this.saveOutfits(outfits);
+    const all = this.getAllOutfits().filter(o => o.outfitId !== outfitId);
+    this.saveAllOutfits(all);
   }
 
   scheduleOutfitDate(outfitId: string, date: string): Outfit | null {
-    const outfits = this.getOutfits();
-    const target = outfits.find(o => o.outfitId === outfitId);
+    const all = this.getAllOutfits();
+    const target = all.find(o => o.outfitId === outfitId);
     if (!target) return null;
     if (!target.scheduledDates.includes(date)) {
       target.scheduledDates.push(date);
       target.updatedAt = new Date().toISOString();
-      this.saveOutfits(outfits);
+      this.saveAllOutfits(all);
     }
     return target;
   }
 
   // Journal Entries
-  getJournalEntries(): JournalEntry[] {
+  getAllJournalEntries(): JournalEntry[] {
     try {
       const raw = localStorage.getItem(KEYS.JOURNAL);
       if (raw) return JSON.parse(raw);
     } catch (e) {
       console.error(e);
     }
-    this.saveJournalEntries(initialJournalEntries);
+    this.saveAllJournalEntries(initialJournalEntries);
     return initialJournalEntries;
   }
 
-  saveJournalEntries(entries: JournalEntry[]): void {
+  saveAllJournalEntries(entries: JournalEntry[]): void {
     localStorage.setItem(KEYS.JOURNAL, JSON.stringify(entries));
   }
 
+  getJournalEntries(userId?: string): JournalEntry[] {
+    const targetUid = userId || this.getUser()?.uid;
+    const all = this.getAllJournalEntries();
+    return targetUid ? all.filter(j => j.userId === targetUid) : all;
+  }
+
   addJournalEntry(entry: Omit<JournalEntry, 'journalId' | 'createdAt'>): JournalEntry {
-    const entries = this.getJournalEntries();
+    const all = this.getAllJournalEntries();
     const newEntry: JournalEntry = {
       ...entry,
       journalId: 'jrn_' + Date.now(),
       createdAt: new Date().toISOString()
     };
-    entries.unshift(newEntry);
-    this.saveJournalEntries(entries);
+    all.unshift(newEntry);
+    this.saveAllJournalEntries(all);
 
     if (newEntry.wornItemIds && newEntry.wornItemIds.length > 0) {
       this.incrementWearCount(newEntry.wornItemIds);
     }
     return newEntry;
-  }
-
-  // Insights
-  getInsights(): Insight {
-    try {
-      const raw = localStorage.getItem(KEYS.INSIGHTS);
-      if (raw) return JSON.parse(raw);
-    } catch (e) {
-      console.error(e);
-    }
-    this.saveInsights(initialInsights);
-    return initialInsights;
-  }
-
-  saveInsights(insight: Insight): void {
-    localStorage.setItem(KEYS.INSIGHTS, JSON.stringify(insight));
   }
 
   // Posts (Social Feed)
@@ -348,11 +335,8 @@ class StorageService {
     return newLog;
   }
 
-  // Admin Actions
   toggleUserPremium(targetUserId: string, isPremium: boolean, adminId: string): void {
-    if (targetUserId === this.getUser().uid) {
-      this.updateUserProfile({ isPremium });
-    }
+    authService.updateProfile({ isPremium });
     this.addAuditLog({
       adminId,
       targetUserId,
@@ -364,15 +348,13 @@ class StorageService {
   }
 
   setUserStatus(targetUserId: string, state: UserStatusState, reason: string, adminId: string, durationDays?: number): void {
-    if (targetUserId === this.getUser().uid) {
-      this.updateUserProfile({
-        status: {
-          state,
-          until: durationDays ? new Date(Date.now() + durationDays * 86400000).toISOString() : null,
-          reason
-        }
-      });
-    }
+    authService.updateProfile({
+      status: {
+        state,
+        until: durationDays ? new Date(Date.now() + durationDays * 86400000).toISOString() : null,
+        reason
+      }
+    });
     this.addAuditLog({
       adminId,
       targetUserId,

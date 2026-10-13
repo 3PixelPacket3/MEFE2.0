@@ -1,68 +1,45 @@
 import React, { useState } from 'react';
-import confetti from 'canvas-confetti';
 import {
-  BrainCircuit,
-  Sparkles,
-  Zap,
   TrendingUp,
+  Zap,
   Award,
-  Layers,
   ArrowRight,
   RefreshCw,
-  Sliders,
-  CheckCircle2
+  BarChart3,
+  Calendar,
+  CheckCircle2,
+  PieChart
 } from 'lucide-react';
-import { Insight, JournalEntry, ClosetItem, Outfit } from '../../types';
+import { WardrobeAnalytics, JournalEntry, ClosetItem, Outfit } from '../../types';
 import { useTranslation } from '../../i18n';
-import { generateGeminiInsights } from '../../services/gemini';
+import { calculateWardrobeAnalytics } from '../../services/analytics';
 
 interface InsightsScreenProps {
-  insight: Insight;
   journals: JournalEntry[];
   closetItems: ClosetItem[];
   outfits: Outfit[];
-  onSaveInsight: (insight: Insight) => void;
   onOpenOutfits: () => void;
 }
 
 export const InsightsScreen: React.FC<InsightsScreenProps> = ({
-  insight,
   journals,
   closetItems,
   outfits,
-  onSaveInsight,
   onOpenOutfits
 }) => {
   const { t } = useTranslation();
 
   const [period, setPeriod] = useState<'weekly' | 'monthly' | 'all_time'>('all_time');
-  const [isLoading, setIsLoading] = useState(false);
 
-  const topOutfit = outfits.find(o => o.outfitId === insight.topOutfitId) || outfits[0];
+  // Compute live deterministic statistical analytics
+  const analytics: WardrobeAnalytics = calculateWardrobeAnalytics(journals, closetItems, outfits, period);
 
-  const handleGenerateFreshInsights = async () => {
-    setIsLoading(true);
-    try {
-      const fresh = await generateGeminiInsights(journals, closetItems, outfits, period);
-      onSaveInsight(fresh);
+  const topOutfit = outfits.find(o => o.outfitId === analytics.topOutfitId) || outfits[0];
 
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.5 },
-        colors: ['#E2725B', '#FFB088', '#3C2F2F']
-      });
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Prepare category correlation bars for visualization
+  // Category correlation bars
   const categoryScores: { category: string; itemType: string; score: number }[] = [];
-  if (insight.categoryCorrelations) {
-    Object.entries(insight.categoryCorrelations).forEach(([cat, subMap]) => {
+  if (analytics.categoryCorrelations) {
+    Object.entries(analytics.categoryCorrelations).forEach(([cat, subMap]) => {
       Object.entries(subMap).forEach(([itemType, score]) => {
         categoryScores.push({ category: cat, itemType, score });
       });
@@ -71,49 +48,40 @@ export const InsightsScreen: React.FC<InsightsScreenProps> = ({
 
   return (
     <div className="pb-24 pt-2 space-y-6">
-      {/* Title & Generate Trigger */}
+      {/* Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 uppercase tracking-wider">
-              Google AI Studio
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-terracotta-100 text-terracotta-800 uppercase tracking-wider flex items-center gap-1">
+              <BarChart3 className="w-3 h-3" />
+              Wardrobe Analytics
             </span>
-            <span className="text-xs text-cocoa-400">Gemini Neural Brain</span>
+            <span className="text-xs text-cocoa-400">Statistical Correlation Engine</span>
           </div>
           <h1 className="font-display font-bold text-2xl sm:text-3xl text-cocoa-900 tracking-tight mt-1">
-            {t('insightsTitle')}
+            Wardrobe & Mood Analytics
           </h1>
           <p className="text-xs text-cocoa-400">
-            {t('insightsSubtitle')}
+            Real data patterns between what you wear and how you feel
           </p>
         </div>
 
-        {/* Generate / Refresh button */}
-        <button
-          onClick={handleGenerateFreshInsights}
-          disabled={isLoading}
-          className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-terracotta-500 to-terracotta-700 hover:from-terracotta-600 hover:to-terracotta-800 text-white font-bold text-xs sm:text-sm shadow-warm-md active:scale-95 transition-all self-start sm:self-auto"
-        >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          <span>{isLoading ? t('analyzingData') : t('generateInsightsBtn')}</span>
-        </button>
-      </div>
-
-      {/* Period Filter Tabs */}
-      <div className="flex items-center gap-2 bg-white p-1 rounded-2xl border border-warm-border w-fit shadow-warm-sm">
-        {(['weekly', 'monthly', 'all_time'] as const).map((p) => (
-          <button
-            key={p}
-            onClick={() => setPeriod(p)}
-            className={`text-xs px-3.5 py-1.5 rounded-xl font-bold transition-all ${
-              period === p
-                ? 'bg-cocoa-600 text-white shadow-sm'
-                : 'text-cocoa-600 hover:text-cocoa-900'
-            }`}
-          >
-            {p === 'weekly' ? t('periodWeekly') : p === 'monthly' ? t('periodMonthly') : t('periodAllTime')}
-          </button>
-        ))}
+        {/* Period Filter Tabs */}
+        <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-warm-border shadow-warm-sm self-start sm:self-auto">
+          {(['weekly', 'monthly', 'all_time'] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`text-xs px-3.5 py-1.5 rounded-xl font-bold transition-all ${
+                period === p
+                  ? 'bg-cocoa-600 text-white shadow-sm'
+                  : 'text-cocoa-600 hover:text-cocoa-900'
+              }`}
+            >
+              {p === 'weekly' ? 'Weekly' : p === 'monthly' ? 'Monthly' : 'All Time'}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Hero Metric Banner: Power Color & Top Mood Ensemble */}
@@ -124,21 +92,21 @@ export const InsightsScreen: React.FC<InsightsScreenProps> = ({
           <div className="flex items-center gap-2 mb-3 text-amber-200">
             <Zap className="w-5 h-5 fill-amber-300 text-amber-300" />
             <span className="text-xs font-bold uppercase tracking-wider">
-              {t('heroPowerColor')}
+              Statistical Power Color
             </span>
           </div>
 
           <h2 className="font-display font-black text-2xl sm:text-3xl text-white tracking-tight">
-            {insight.powerColor}
+            {analytics.powerColor}
           </h2>
           <p className="text-xs text-white/90 mt-2 leading-relaxed">
-            Statistically correlated with a +2.4 mood elevation across your recent journal check-ins.
+            Statistically correlated with highest emotional mood scores across your logged reflections.
           </p>
 
           <div className="mt-4 pt-3 border-t border-white/20 flex items-center justify-between text-xs font-semibold text-white/80">
-            <span>Peak Day: Thursdays</span>
+            <span>Logged Check-ins: {analytics.totalCheckins}</span>
             <span className="bg-white/20 px-2 py-0.5 rounded-full text-[10px] text-white">
-              8.8/10 Avg Mood
+              {analytics.avgMoodScore}/10 Mean Score
             </span>
           </div>
         </div>
@@ -150,7 +118,7 @@ export const InsightsScreen: React.FC<InsightsScreenProps> = ({
               <div className="flex items-center gap-2 mb-3 text-terracotta-300">
                 <Award className="w-5 h-5 text-terracotta-400" />
                 <span className="text-xs font-bold uppercase tracking-wider">
-                  {t('topOutfitBadge')}
+                  Top Mood-Boosting Ensemble
                 </span>
               </div>
               <h3 className="font-display font-bold text-xl sm:text-2xl text-white">
@@ -177,37 +145,37 @@ export const InsightsScreen: React.FC<InsightsScreenProps> = ({
         )}
       </div>
 
-      {/* AI Analysis Block: Direct Google AI Studio narrative output */}
+      {/* Analytical Summary Block */}
       <div className="bg-white rounded-3xl p-6 border border-warm-border shadow-warm-sm space-y-3">
         <div className="flex items-center gap-2.5 pb-2 border-b border-warm-100">
           <div className="w-8 h-8 rounded-xl bg-terracotta-100 flex items-center justify-center text-terracotta-600">
-            <BrainCircuit className="w-4 h-4" />
+            <PieChart className="w-4 h-4" />
           </div>
           <div>
             <h3 className="font-bold text-sm text-cocoa-900">
-              Gemini AI Synthesis & Emotional Diagnosis
+              Wardrobe Correlation Diagnosis
             </h3>
             <p className="text-[11px] text-cocoa-400">
-              Natural language pattern recognition
+              Computed from daily check-ins and worn pieces
             </p>
           </div>
         </div>
 
         <div className="p-4 bg-warm-50 rounded-2xl border border-warm-border">
           <p className="text-xs sm:text-sm text-cocoa-800 leading-relaxed font-normal">
-            {insight.aiNarrativeSummary}
+            {analytics.narrativeSummary}
           </p>
         </div>
 
-        {/* Single Actionable Empowerment Tip */}
+        {/* Actionable Style Tip */}
         <div className="p-4 bg-terracotta-50/70 rounded-2xl border border-terracotta-200/70 flex items-start gap-3">
-          <Sparkles className="w-5 h-5 text-terracotta-600 flex-shrink-0 mt-0.5" />
+          <CheckCircle2 className="w-5 h-5 text-terracotta-600 flex-shrink-0 mt-0.5" />
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-terracotta-800 block mb-0.5">
-              {t('actionableTipTitle')}
+              Empowerment Style Recommendation
             </span>
             <p className="text-xs text-cocoa-800 leading-relaxed font-medium">
-              {insight.actionableTip}
+              {analytics.actionableTip}
             </p>
           </div>
         </div>
@@ -218,7 +186,7 @@ export const InsightsScreen: React.FC<InsightsScreenProps> = ({
         <div className="flex items-center justify-between pb-3 border-b border-warm-100">
           <div>
             <h3 className="font-bold text-sm text-cocoa-900">
-              {t('categoryCorrelationsTitle')}
+              Mood Score vs Clothing Category
             </h3>
             <p className="text-[11px] text-cocoa-400">
               Mean mood rating (1 - 10) per clothing category

@@ -1,57 +1,49 @@
 import React, { useState } from 'react';
 import {
   X,
-  Key,
-  Database,
   User,
   Shield,
-  Sparkles,
   Globe,
-  Save,
+  Database,
   CheckCircle2,
-  ExternalLink
+  Users,
+  LogOut
 } from 'lucide-react';
 import { UserProfile } from '../../types';
 import { useTranslation, Language } from '../../i18n';
-import { getGeminiApiKey, saveGeminiApiKey, getGeminiModelName, saveGeminiModelName } from '../../services/gemini';
 import {
   getStoredFirebaseConfig,
   saveFirebaseConfig,
-  clearFirebaseConfig,
-  FirebaseConfig
 } from '../../services/firebase';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: UserProfile;
+  user: UserProfile | null;
   onUpdateUser: (updates: Partial<UserProfile>) => void;
+  onOpenAuth: () => void;
+  onSignOut: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
   onClose,
   user,
-  onUpdateUser
+  onUpdateUser,
+  onOpenAuth,
+  onSignOut
 }) => {
   const { language, setLanguage, t } = useTranslation();
 
   // Profile
-  const [displayName, setDisplayName] = useState(user.displayName);
-  const [bio, setBio] = useState(user.bio);
-  const [isAdminRole, setIsAdminRole] = useState(user.role === 'admin');
-
-  // Gemini API Key
-  const [geminiKey, setGeminiKey] = useState(getGeminiApiKey());
-  const [geminiModel, setGeminiModel] = useState(getGeminiModelName());
+  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [bio, setBio] = useState(user?.bio || '');
+  const [isAdminRole, setIsAdminRole] = useState(user?.role === 'admin');
 
   // Firebase Config
   const storedFb = getStoredFirebaseConfig();
   const [fbApiKey, setFbApiKey] = useState(storedFb?.apiKey || '');
-  const [fbAuthDomain, setFbAuthDomain] = useState(storedFb?.authDomain || '');
   const [fbProjectId, setFbProjectId] = useState(storedFb?.projectId || '');
-  const [fbStorageBucket, setFbStorageBucket] = useState(storedFb?.storageBucket || '');
-  const [fbAppId, setFbAppId] = useState(storedFb?.appId || '');
 
   const [savedNotification, setSavedNotification] = useState(false);
 
@@ -60,26 +52,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleSaveAll = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Update user profile
-    onUpdateUser({
-      displayName: displayName.trim(),
-      bio: bio.trim(),
-      role: isAdminRole ? 'admin' : 'user'
-    });
-
-    // Save Gemini keys
-    saveGeminiApiKey(geminiKey);
-    saveGeminiModelName(geminiModel);
+    if (user) {
+      onUpdateUser({
+        displayName: displayName.trim(),
+        bio: bio.trim(),
+        role: isAdminRole ? 'admin' : 'user'
+      });
+    }
 
     // Save Firebase keys if provided
     if (fbApiKey && fbProjectId) {
       saveFirebaseConfig({
         apiKey: fbApiKey.trim(),
-        authDomain: fbAuthDomain.trim(),
+        authDomain: `${fbProjectId.trim()}.firebaseapp.com`,
         projectId: fbProjectId.trim(),
-        storageBucket: fbStorageBucket.trim(),
+        storageBucket: `${fbProjectId.trim()}.appspot.com`,
         messagingSenderId: '',
-        appId: fbAppId.trim()
+        appId: ''
       });
     }
 
@@ -87,7 +76,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setTimeout(() => {
       setSavedNotification(false);
       onClose();
-    }, 900);
+    }, 800);
   };
 
   return (
@@ -111,37 +100,79 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         <form onSubmit={handleSaveAll} className="space-y-5 pt-4">
-          {/* User Profile */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-cocoa-800 uppercase tracking-wider flex items-center gap-1.5">
-              <User className="w-4 h-4 text-terracotta-500" />
-              <span>{t('userProfile')}</span>
-            </h3>
+          {/* User Account Bar with Switch & Sign Out */}
+          {user && (
+            <div className="p-3.5 bg-warm-50 rounded-2xl border border-warm-border flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName}
+                  className="w-10 h-10 rounded-full object-cover ring-2 ring-terracotta-400"
+                />
+                <div>
+                  <h4 className="font-bold text-xs sm:text-sm text-cocoa-900">{user.displayName}</h4>
+                  <p className="text-[11px] text-cocoa-400">{user.email}</p>
+                </div>
+              </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-cocoa-600 mb-1">
-                Display Name
-              </label>
-              <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-warm-border bg-warm-50 focus:bg-white text-cocoa-900"
-              />
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenAuth();
+                  }}
+                  className="px-2.5 py-1.5 rounded-xl bg-warm-200 text-cocoa-700 font-bold text-xs hover:bg-warm-300 transition-colors"
+                >
+                  Switch User
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onSignOut();
+                  }}
+                  className="px-2.5 py-1.5 rounded-xl bg-red-50 text-red-600 font-bold text-xs hover:bg-red-100 transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
             </div>
+          )}
 
-            <div>
-              <label className="block text-xs font-semibold text-cocoa-600 mb-1">
-                Bio
-              </label>
-              <input
-                type="text"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-warm-border bg-warm-50 focus:bg-white text-cocoa-900"
-              />
+          {/* User Profile Fields */}
+          {user && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-cocoa-800 uppercase tracking-wider flex items-center gap-1.5">
+                <User className="w-4 h-4 text-terracotta-500" />
+                <span>{t('userProfile')}</span>
+              </h3>
+
+              <div>
+                <label className="block text-xs font-semibold text-cocoa-600 mb-1">
+                  Display Name
+                </label>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-warm-border bg-warm-50 focus:bg-white text-cocoa-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-cocoa-600 mb-1">
+                  Bio
+                </label>
+                <input
+                  type="text"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-warm-border bg-warm-50 focus:bg-white text-cocoa-900"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Language Selection */}
           <div className="space-y-2 pt-2 border-t border-warm-100">
@@ -171,62 +202,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
-          {/* Google AI Studio Gemini API Configuration */}
-          <div className="space-y-2.5 pt-2 border-t border-warm-100">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-cocoa-800 uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-amber-500" />
-                <span>Google AI Studio (Gemini Brain)</span>
-              </h3>
-              <a
-                href="https://aistudio.google.com/app/apikey"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[11px] text-terracotta-600 hover:underline flex items-center gap-1"
-              >
-                <span>Get API Key</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-cocoa-600 mb-1">
-                {t('geminiApiKeyLabel')}
-              </label>
-              <input
-                type="password"
-                value={geminiKey}
-                onChange={(e) => setGeminiKey(e.target.value)}
-                placeholder="AIzaSy..."
-                className="w-full px-3.5 py-2 text-xs font-mono rounded-xl border border-warm-border bg-warm-50 focus:bg-white text-cocoa-900"
-              />
-              <p className="text-[11px] text-cocoa-400 mt-1">
-                {t('apiKeyHint')}
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-cocoa-600 mb-1">
-                Gemini Model / Tuned Model ID
-              </label>
-              <input
-                type="text"
-                value={geminiModel}
-                onChange={(e) => setGeminiModel(e.target.value)}
-                placeholder="gemini-1.5-flash or custom tuned model ID"
-                className="w-full px-3.5 py-2 text-xs rounded-xl border border-warm-border bg-warm-50 focus:bg-white text-cocoa-900"
-              />
-            </div>
-          </div>
-
-          {/* Firebase Credentials Configuration */}
+          {/* Firebase Credentials Configuration (Optional Cloud Sync) */}
           <div className="space-y-2.5 pt-2 border-t border-warm-100">
             <h3 className="text-xs font-bold text-cocoa-800 uppercase tracking-wider flex items-center gap-1.5">
               <Database className="w-4 h-4 text-terracotta-500" />
               <span>{t('firebaseConfig')}</span>
             </h3>
             <p className="text-[11px] text-cocoa-400">
-              MEFE runs completely offline/client-side out-of-the-box. Add Firebase credentials below if syncing to Google Cloud Firestore.
+              MEFE runs 100% locally with high-performance IndexedDB/LocalStorage. Optional cloud backup can be configured below.
             </p>
 
             <div className="grid grid-cols-2 gap-2">
@@ -254,30 +237,32 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Role Switching for Testing */}
-          <div className="p-3 bg-warm-50 rounded-2xl border border-warm-border flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-terracotta-600" />
-              <div>
-                <span className="text-xs font-bold text-cocoa-900 block">
-                  {t('demoModeToggle')}
-                </span>
-                <span className="text-[10px] text-cocoa-400">
-                  Switch between standard User and Executive Admin views
-                </span>
+          {user && (
+            <div className="p-3 bg-warm-50 rounded-2xl border border-warm-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-terracotta-600" />
+                <div>
+                  <span className="text-xs font-bold text-cocoa-900 block">
+                    {t('demoModeToggle')}
+                  </span>
+                  <span className="text-[10px] text-cocoa-400">
+                    Switch between User and Executive Admin views
+                  </span>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setIsAdminRole(!isAdminRole)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  isAdminRole
+                    ? 'bg-terracotta-500 text-white shadow-sm'
+                    : 'bg-warm-200 text-cocoa-600'
+                }`}
+              >
+                {isAdminRole ? 'Admin Active' : 'User Active'}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsAdminRole(!isAdminRole)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                isAdminRole
-                  ? 'bg-terracotta-500 text-white shadow-sm'
-                  : 'bg-warm-200 text-cocoa-600'
-              }`}
-            >
-              {isAdminRole ? 'Admin Active' : 'User Active'}
-            </button>
-          </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex gap-2 pt-2 border-t border-warm-border">

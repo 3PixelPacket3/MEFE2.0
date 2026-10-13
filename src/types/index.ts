@@ -1,4 +1,4 @@
-// Core Data Models matching the Firestore Blueprint Specification
+// Core Data Models matching Multi-User Architecture & Three.js 3D Studio
 
 export type UserRole = 'user' | 'admin';
 export type UserStatusState = 'active' | 'muted' | 'banned';
@@ -15,6 +15,7 @@ export interface AvatarConfig {
   hairStyle: string;
   hairColor: string;
   canvasScale: number;
+  bodyType?: 'classic' | 'athletic' | 'petite' | 'curvy';
 }
 
 export interface UserProfile {
@@ -82,7 +83,6 @@ export interface JournalEntry {
   wornItemIds: string[];
   entryText: string;
   sentimentScore: number | null; // -1.0 to 1.0
-  aiProcessed: boolean;
   createdAt: string;
 }
 
@@ -90,7 +90,7 @@ export interface CategoryCorrelations {
   [category: string]: Record<string, number>;
 }
 
-export interface Insight {
+export interface WardrobeAnalytics {
   insightId: string;
   userId: string;
   period: 'weekly' | 'monthly' | 'all_time';
@@ -99,8 +99,10 @@ export interface Insight {
   powerColor: string;
   topOutfitId: string | null;
   categoryCorrelations: CategoryCorrelations;
-  aiNarrativeSummary: string;
+  narrativeSummary: string;
   actionableTip: string;
+  avgMoodScore: number;
+  totalCheckins: number;
   generatedAt: string;
 }
 
@@ -125,7 +127,6 @@ export interface Post {
   likeCount: number;
   commentCount: number;
   createdAt: string;
-  // Subcollections represented in memory
   likes?: Record<string, { userId: string; createdAt: string }>;
   comments?: PostComment[];
 }
@@ -134,7 +135,7 @@ export interface Retailer {
   retailerId: string;
   name: string;
   logoUrl: string;
-  searchUrlTemplate: string; // contains {query} and {affiliateId}
+  searchUrlTemplate: string;
   affiliateId: string;
   isActive: boolean;
   priorityOrder: number;

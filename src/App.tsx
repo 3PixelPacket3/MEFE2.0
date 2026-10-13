@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { I18nProvider, useTranslation } from './i18n';
+import { I18nProvider } from './i18n';
 import {
   UserProfile,
   ClosetItem,
   Outfit,
   JournalEntry,
-  Insight,
   Post,
   Retailer,
   AdminAuditLog,
@@ -13,6 +12,7 @@ import {
   MenuSubView
 } from './types';
 import { dbService } from './services/storage';
+import { authService } from './services/auth';
 
 // Layout Components
 import { TopNav } from './components/layout/TopNav';
@@ -23,21 +23,24 @@ import { RetailerDrawer } from './components/layout/RetailerDrawer';
 // Screens
 import { ClosetScreen } from './components/closet/ClosetScreen';
 import { OutfitsScreen } from './components/outfits/OutfitsScreen';
-import { CluelessAvatarStudio } from './components/avatar/CluelessAvatarStudio';
+import { ThreeAvatarStudio } from './components/avatar/ThreeAvatarStudio';
 import { JournalScreen } from './components/journal/JournalScreen';
 import { InsightsScreen } from './components/insights/InsightsScreen';
 import { SocialFeedScreen } from './components/social/SocialFeedScreen';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { MenuScreen } from './components/menu/MenuScreen';
 import { SettingsModal } from './components/settings/SettingsModal';
+import { AuthModal } from './components/auth/AuthModal';
 
 const AppContent: React.FC = () => {
-  // Database States
-  const [user, setUser] = useState<UserProfile>(() => dbService.getUser());
-  const [closetItems, setClosetItems] = useState<ClosetItem[]>(() => dbService.getClosetItems());
-  const [outfits, setOutfits] = useState<Outfit[]>(() => dbService.getOutfits());
-  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>(() => dbService.getJournalEntries());
-  const [insights, setInsights] = useState<Insight>(() => dbService.getInsights());
+  // Auth State
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => authService.getCurrentUser());
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // User-Isolated Database States
+  const [closetItems, setClosetItems] = useState<ClosetItem[]>(() => dbService.getClosetItems(currentUser?.uid));
+  const [outfits, setOutfits] = useState<Outfit[]>(() => dbService.getOutfits(currentUser?.uid));
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>(() => dbService.getJournalEntries(currentUser?.uid));
   const [posts, setPosts] = useState<Post[]>(() => dbService.getPosts());
   const [retailers, setRetailers] = useState<Retailer[]>(() => dbService.getRetailers());
   const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>(() => dbService.getAuditLogs());
@@ -52,64 +55,104 @@ const AppContent: React.FC = () => {
   const [retailerDrawerQuery, setRetailerDrawerQuery] = useState('terracotta blazer');
   const [selectedItemForView, setSelectedItemForView] = useState<ClosetItem | null>(null);
 
-  const refreshAllData = () => {
-    setUser(dbService.getUser());
-    setClosetItems(dbService.getClosetItems());
-    setOutfits(dbService.getOutfits());
-    setJournalEntries(dbService.getJournalEntries());
-    setInsights(dbService.getInsights());
+  // Reload data for current user
+  const reloadUserData = (uid?: string) => {
+    const targetUid = uid || currentUser?.uid;
+    setClosetItems(dbService.getClosetItems(targetUid));
+    setOutfits(dbService.getOutfits(targetUid));
+    setJournalEntries(dbService.getJournalEntries(targetUid));
     setPosts(dbService.getPosts());
     setRetailers(dbService.getRetailers());
     setAuditLogs(dbService.getAuditLogs());
   };
 
+  useEffect(() => {
+    reloadUserData(currentUser?.uid);
+  }, [currentUser?.uid]);
+
+  // Auth Handlers
+  const handleUserChange = (newUser: UserProfile) => {
+    setCurrentUser(newUser);
+    reloadUserData(newUser.uid);
+  };
+
+  const handleSignOut = () => {
+    authService.logout();
+    setCurrentUser(null);
+    setIsAuthModalOpen(true);
+  };
+
   // Closet Actions
   const handleAddClosetItem = (itemData: Omit<ClosetItem, 'itemId' | 'createdAt' | 'wearCount' | 'lastWornAt'>) => {
-    dbService.addClosetItem(itemData);
-    refreshAllData();
+    if (!currentUser) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    dbService.addClosetItem({ ...itemData, userId: currentUser.uid });
+    reloadUserData();
   };
 
   const handleDeleteClosetItem = (itemId: string) => {
     dbService.deleteClosetItem(itemId);
-    refreshAllData();
+    reloadUserData();
   };
 
   // Outfit Actions
   const handleSaveOutfit = (outfitData: Omit<Outfit, 'outfitId' | 'createdAt' | 'updatedAt'>) => {
-    dbService.addOutfit(outfitData);
-    refreshAllData();
+    if (!currentUser) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    dbService.addOutfit({ ...outfitData, userId: currentUser.uid });
+    reloadUserData();
   };
 
   const handleScheduleOutfit = (outfitId: string, date: string) => {
     dbService.scheduleOutfitDate(outfitId, date);
-    refreshAllData();
+    reloadUserData();
   };
 
   // Journal Actions
   const handleAddJournalEntry = (entryData: Omit<JournalEntry, 'journalId' | 'createdAt'>) => {
-    dbService.addJournalEntry(entryData);
-    refreshAllData();
+    if (!currentUser) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    dbService.addJournalEntry({ ...entryData, userId: currentUser.uid });
+    reloadUserData();
   };
 
   // Social Feed Actions
   const handleToggleLike = (postId: string) => {
-    dbService.toggleLikePost(postId, user.uid);
-    refreshAllData();
+    if (!currentUser) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    dbService.toggleLikePost(postId, currentUser.uid);
+    setPosts(dbService.getPosts());
   };
 
   const handleAddComment = (postId: string, text: string) => {
+    if (!currentUser) {
+      setIsAuthModalOpen(true);
+      return;
+    }
     dbService.addCommentToPost(postId, {
-      authorId: user.uid,
-      authorDisplayName: user.displayName,
-      authorPhotoURL: user.photoURL,
+      authorId: currentUser.uid,
+      authorDisplayName: currentUser.displayName,
+      authorPhotoURL: currentUser.photoURL,
       text
     });
-    refreshAllData();
+    setPosts(dbService.getPosts());
   };
 
   const handleAddPost = (postData: Omit<Post, 'postId' | 'likeCount' | 'commentCount' | 'createdAt' | 'likes' | 'comments'>) => {
+    if (!currentUser) {
+      setIsAuthModalOpen(true);
+      return;
+    }
     dbService.addPost(postData);
-    refreshAllData();
+    setPosts(dbService.getPosts());
   };
 
   // Retailer Drawer Trigger
@@ -132,35 +175,30 @@ const AppContent: React.FC = () => {
       if (menuSubView === 'insights') {
         return (
           <InsightsScreen
-            insight={insights}
             journals={journalEntries}
             closetItems={closetItems}
             outfits={outfits}
-            onSaveInsight={(fresh) => {
-              dbService.saveInsights(fresh);
-              refreshAllData();
-            }}
             onOpenOutfits={() => handleTabChange('outfits', null)}
           />
         );
       }
       if (menuSubView === 'avatar') {
         return (
-          <CluelessAvatarStudio
+          <ThreeAvatarStudio
             closetItems={closetItems}
-            user={user}
+            user={currentUser || authService.getAllUsers()[0]}
             onSaveOutfit={handleSaveOutfit}
             onClose={() => setMenuSubView(null)}
           />
         );
       }
-      if (menuSubView === 'admin' && user.role === 'admin') {
+      if (menuSubView === 'admin' && currentUser?.role === 'admin') {
         return (
           <AdminDashboard
-            currentUser={user}
+            currentUser={currentUser}
             retailers={retailers}
             auditLogs={auditLogs}
-            onRefreshData={refreshAllData}
+            onRefreshData={() => reloadUserData()}
           />
         );
       }
@@ -171,7 +209,7 @@ const AppContent: React.FC = () => {
         return (
           <SocialFeedScreen
             posts={posts}
-            user={user}
+            user={currentUser || authService.getAllUsers()[0]}
             closetItems={closetItems}
             outfits={outfits}
             onToggleLike={handleToggleLike}
@@ -196,7 +234,7 @@ const AppContent: React.FC = () => {
           <OutfitsScreen
             closetItems={closetItems}
             outfits={outfits}
-            user={user}
+            user={currentUser || authService.getAllUsers()[0]}
             onSaveOutfit={handleSaveOutfit}
             onScheduleOutfit={handleScheduleOutfit}
           />
@@ -213,10 +251,12 @@ const AppContent: React.FC = () => {
       case 'menu':
         return (
           <MenuScreen
-            user={user}
+            user={currentUser}
             onSelectSubView={(sub) => setMenuSubView(sub)}
             onOpenSettings={() => setIsSettingsOpen(true)}
             onOpenRetailers={() => handleOpenRetailerDrawer('terracotta blazer')}
+            onOpenAuth={() => setIsAuthModalOpen(true)}
+            onSignOut={handleSignOut}
           />
         );
       default:
@@ -226,21 +266,25 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-warm-bg text-cocoa-900 flex flex-col md:flex-row antialiased">
-      {/* Desktop Left-sided Sidebar (Facebook/Twitter architecture) */}
+      {/* Desktop Left-sided Sidebar */}
       <DesktopSidebar
         activeTab={activeTab}
         menuSubView={menuSubView}
-        user={user}
+        user={currentUser}
         onTabChange={handleTabChange}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onSignOut={handleSignOut}
       />
 
       {/* Central Application Column */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Global Shell: Top Bar */}
+        {/* Global Shell: Top Bar with Sign In / Switch User */}
         <TopNav
-          user={user}
+          user={currentUser}
           onOpenSettings={() => setIsSettingsOpen(true)}
+          onOpenAuth={() => setIsAuthModalOpen(true)}
+          onSignOut={handleSignOut}
           onSelectItem={(item) => {
             setSelectedItemForView(item);
             handleTabChange('closet', null);
@@ -271,11 +315,21 @@ const AppContent: React.FC = () => {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        user={user}
+        user={currentUser}
         onUpdateUser={(updates) => {
-          const updated = dbService.updateUserProfile(updates);
-          setUser(updated);
+          const updated = authService.updateProfile(updates);
+          if (updated) setCurrentUser(updated);
         }}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onSignOut={handleSignOut}
+      />
+
+      {/* Auth & Switch User Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onUserChange={handleUserChange}
+        currentUser={currentUser}
       />
     </div>
   );

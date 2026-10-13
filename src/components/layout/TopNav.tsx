@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Globe, Shield, Sparkles, Download, Settings, X, Wifi, WifiOff } from 'lucide-react';
+import { Search, Globe, Shield, Sparkles, Download, Settings, X, Wifi, WifiOff, LogOut, User } from 'lucide-react';
 import { useTranslation, Language } from '../../i18n';
 import { UserProfile, ClosetItem, Post } from '../../types';
 import { dbService } from '../../services/storage';
 
 interface TopNavProps {
-  user: UserProfile;
+  user: UserProfile | null;
   onOpenSettings: () => void;
+  onOpenAuth: () => void;
+  onSignOut: () => void;
   onSelectItem: (item: ClosetItem) => void;
   onOpenRetailers: (query?: string) => void;
 }
@@ -14,6 +16,8 @@ interface TopNavProps {
 export const TopNav: React.FC<TopNavProps> = ({
   user,
   onOpenSettings,
+  onOpenAuth,
+  onSignOut,
   onSelectItem,
   onOpenRetailers
 }) => {
@@ -86,7 +90,7 @@ export const TopNav: React.FC<TopNavProps> = ({
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
-              placeholder={t('searchPlaceholder')}
+              placeholder="Search wardrobe, outfits, posts..."
               className="w-full pl-9 pr-8 py-1.5 sm:py-2 text-xs sm:text-sm bg-warm-100/80 hover:bg-warm-100 focus:bg-white text-cocoa-900 placeholder:text-cocoa-400 rounded-full border border-warm-200 focus:border-terracotta-500 focus:outline-none focus:ring-2 focus:ring-terracotta-500/20 transition-all shadow-inner"
             />
             {searchQuery && (
@@ -150,45 +154,20 @@ export const TopNav: React.FC<TopNavProps> = ({
                   <p className="text-xs text-cocoa-400 px-2 py-1">No closet matches found.</p>
                 )}
               </div>
-
-              {/* Social matches */}
-              {searchResults.posts.length > 0 && (
-                <div className="p-2 border-t border-warm-border">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-cocoa-400 px-2 py-1">
-                    Community Posts ({searchResults.posts.length})
-                  </p>
-                  {searchResults.posts.slice(0, 3).map((post) => (
-                    <div
-                      key={post.postId}
-                      className="flex items-center gap-3 p-2 hover:bg-warm-50 rounded-xl cursor-pointer transition-colors"
-                    >
-                      <img
-                        src={post.mediaUrl}
-                        alt="Post look"
-                        className="w-10 h-10 rounded-lg object-cover border border-warm-border"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-cocoa-800 line-clamp-1">{post.caption}</p>
-                        <p className="text-[11px] text-cocoa-400">By {post.authorDisplayName}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           )}
         </div>
 
-        {/* Action Controls: Language, PWA Install, Admin Badge, Settings */}
+        {/* Action Controls: User Account, Language, PWA Install, Settings */}
         <div className="flex items-center gap-1.5 sm:gap-2.5">
           {/* PWA Install Button */}
           <button
             onClick={handleInstallClick}
-            title={t('installPwa')}
+            title="Install App"
             className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-cocoa-700 bg-warm-100 hover:bg-warm-200 rounded-full border border-warm-200 transition-colors"
           >
             <Download className="w-3.5 h-3.5 text-terracotta-500" />
-            <span className="hidden sm:inline">{t('installPwa')}</span>
+            <span className="hidden sm:inline">Install</span>
           </button>
 
           {/* Language Switcher Dropdown */}
@@ -205,37 +184,43 @@ export const TopNav: React.FC<TopNavProps> = ({
             </select>
           </div>
 
-          {/* Role & Status Badges */}
-          {user.role === 'admin' && (
-            <span className="hidden sm:flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold text-terracotta-700 bg-terracotta-100 rounded-full border border-terracotta-300">
-              <Shield className="w-3 h-3" />
-              {t('adminBadge')}
-            </span>
+          {/* User Sign In / Switch Account Button */}
+          {user ? (
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={onOpenAuth}
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-warm-100 hover:bg-warm-200 border border-warm-200 rounded-full text-xs font-semibold text-cocoa-800 transition-colors"
+                title="Switch Account"
+              >
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName}
+                  className="w-4 h-4 rounded-full object-cover"
+                />
+                <span className="hidden lg:inline">{user.displayName.split(' ')[0]}</span>
+              </button>
+
+              <button
+                onClick={onSignOut}
+                title="Sign Out"
+                className="p-1.5 rounded-full hover:bg-red-50 text-cocoa-400 hover:text-red-600 transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onOpenAuth}
+              className="px-3 py-1 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-full text-xs font-bold shadow-terracotta"
+            >
+              Sign In
+            </button>
           )}
 
-          {user.isPremium && (
-            <span className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold text-amber-800 bg-amber-100 rounded-full border border-amber-300">
-              <Sparkles className="w-3 h-3" />
-              {t('premiumBadge')}
-            </span>
-          )}
-
-          {/* Online / Offline status */}
-          <span
-            title={isOnline ? t('cloudConnected') : t('offlineMode')}
-            className="p-1.5 rounded-full text-cocoa-500"
-          >
-            {isOnline ? (
-              <Wifi className="w-3.5 h-3.5 text-emerald-600" />
-            ) : (
-              <WifiOff className="w-3.5 h-3.5 text-amber-600" />
-            )}
-          </span>
-
-          {/* Settings / Profile Button */}
+          {/* Settings Button */}
           <button
             onClick={onOpenSettings}
-            title={t('navSettings')}
+            title="Settings"
             className="p-1.5 rounded-full bg-warm-100 hover:bg-warm-200 text-cocoa-700 border border-warm-200 transition-colors"
           >
             <Settings className="w-4 h-4" />
