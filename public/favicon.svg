@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="terragrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E2725B" />
+      <stop offset="100%" stop-color="#A44330" />
+    </linearGradient>
+    <linearGradient id="warmgrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FAF6F0" />
+      <stop offset="100%" stop-color="#EFE6DC" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#warmgrad)" />
+  <circle cx="256" cy="156" r="44" stroke="#3C2F2F" stroke-width="24" fill="none" stroke-dasharray="210 70" stroke-linecap="round" />
+  <path d="M256 198 L256 240 L108 340 C95 349 102 370 118 370 L394 370 C410 370 417 349 404 340 L256 240 Z" fill="url(#terragrad)" stroke="#3C2F2F" stroke-width="12" stroke-linejoin="round" />
+  <circle cx="256" cy="305" r="18" fill="#FAF6F0" />
+  <!-- Sparkles -->
+  <path d="M370 140 L378 156 L394 164 L378 172 L370 188 L362 172 L346 164 L362 156 Z" fill="#E2725B" />
+  <path d="M140 180 L146 192 L158 198 L146 204 L140 216 L134 204 L122 198 L134 192 Z" fill="#3C2F2F" />
+</svg>

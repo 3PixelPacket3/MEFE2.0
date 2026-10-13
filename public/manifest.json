@@ -1,0 +1,20 @@
+{
+  "name": "MEFE — AI Wardrobe & Mood Studio",
+  "short_name": "MEFE",
+  "description": "Mindful Fashion & Emotional Well-being: AI Insights, Clueless 90s Avatar Studio, Wardrobe Manager & Mood Journal",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FAF6F0",
+  "theme_color": "#E2725B",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "fashion", "health", "social"]
+}

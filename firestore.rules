@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'admin';
+    }
+    function isNotBanned() {
+      return isAuthenticated() && 
+        (!('status' in request.auth.token) || request.auth.token.status != 'banned');
+    }
+
+    // Users
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) || isAdmin();
+    }
+
+    // Closet & Outfits (Private to user)
+    match /closet_items/{itemId} {
+      allow read, write: if isOwner(resource.data.userId) && isNotBanned();
+      allow create: if isOwner(request.resource.data.userId) && isNotBanned();
+    }
+    match /outfits/{outfitId} {
+      allow read, write: if isOwner(resource.data.userId) && isNotBanned();
+      allow create: if isOwner(request.resource.data.userId) && isNotBanned();
+    }
+
+    // Journal & Insights (Strictly private)
+    match /journal_entries/{journalId} {
+      allow read, write: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+    match /insights/{insightId} {
+      allow read: if isOwner(resource.data.userId);
+      allow write: if false; // Only written by Cloud Functions / Backend API
+    }
+
+    // Public Social Feed
+    match /posts/{postId} {
+      allow read: if isAuthenticated();
+      allow create: if isNotBanned() && isOwner(request.resource.data.authorId);
+      allow update, delete: if isOwner(resource.data.authorId) || isAdmin();
+
+      match /comments/{commentId} {
+        allow read: if isAuthenticated();
+        allow create: if isNotBanned();
+        allow delete: if isOwner(resource.data.authorId) || isAdmin();
+      }
+      match /likes/{userId} {
+        allow read, write: if isOwner(userId) && isNotBanned();
+      }
+    }
+
+    // Retailers (Public read, Admin write)
+    match /retailers/{retailerId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Admin Logs (Admin read-only, created via backend)
+    match /admin_audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+  }
+}
