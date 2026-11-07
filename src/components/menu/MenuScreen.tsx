@@ -6,11 +6,9 @@ import {
   Shield,
   Settings,
   ChevronRight,
-  LogOut,
-  Users
+  LogOut
 } from 'lucide-react';
 import { UserProfile, MenuSubView } from '../../types';
-import { useTranslation } from '../../i18n';
 
 interface MenuScreenProps {
   user: UserProfile | null;
@@ -29,8 +27,6 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({
   onOpenAuth,
   onSignOut
 }) => {
-  const { t } = useTranslation();
-
   const menuItems = [
     {
       id: 'insights' as MenuSubView,
@@ -44,7 +40,7 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({
     {
       id: 'avatar' as MenuSubView,
       title: '3D Avatar Studio',
-      desc: 'Real-time Three.js 360° mannequin & garment projection',
+      desc: 'Stylized 3D character avatar with live clothing texture mapping',
       icon: UserCheck,
       color: 'bg-terracotta-100 text-terracotta-700',
       badge: 'Three.js 3D',
@@ -74,7 +70,7 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({
     {
       id: 'settings' as MenuSubView,
       title: 'Settings & Language',
-      desc: 'Switch between English, French, and Spanish',
+      desc: 'Profile customization and English, French, or Spanish language toggle',
       icon: Settings,
       color: 'bg-warm-200 text-cocoa-700',
       action: onOpenSettings
@@ -83,7 +79,7 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({
 
   return (
     <div className="pb-24 pt-2 space-y-5">
-      {/* User Profile Mini Banner with Switch / Sign Out actions */}
+      {/* User Profile Mini Banner with Sign Out action (No Account Switching) */}
       {user ? (
         <div className="bg-white rounded-3xl p-5 border border-warm-border shadow-warm-sm space-y-3">
           <div className="flex items-center gap-4">
@@ -110,16 +106,21 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({
                 <span>{user.followingCount} following</span>
               </div>
             </div>
+            <img
+              src="./mefe-logo.jpg"
+              alt="MEFE"
+              className="w-10 h-10 rounded-xl object-cover border border-amber-300/60 hidden sm:block"
+            />
           </div>
 
-          {/* Account Controls */}
+          {/* Account Controls: Sign Out Only */}
           <div className="flex items-center gap-2 pt-2 border-t border-warm-100">
             <button
-              onClick={onOpenAuth}
+              onClick={onOpenSettings}
               className="flex-1 py-2 px-3 rounded-2xl bg-warm-100 hover:bg-warm-200 text-cocoa-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
             >
-              <Users className="w-4 h-4 text-terracotta-600" />
-              <span>Switch User</span>
+              <Settings className="w-4 h-4 text-terracotta-600" />
+              <span>Edit Profile & Settings</span>
             </button>
             <button
               onClick={onSignOut}
@@ -132,12 +133,12 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({
         </div>
       ) : (
         <div className="bg-white rounded-3xl p-5 border border-warm-border shadow-warm-sm text-center space-y-2">
-          <p className="text-sm font-semibold text-cocoa-700">You are currently in guest mode</p>
+          <p className="text-sm font-semibold text-cocoa-700">Please sign in to access your wardrobe</p>
           <button
             onClick={onOpenAuth}
             className="w-full py-3 rounded-2xl bg-terracotta-500 text-white font-bold text-xs shadow-terracotta"
           >
-            Sign In / Switch Profile
+            Log In / Sign Up
           </button>
         </div>
       )}
