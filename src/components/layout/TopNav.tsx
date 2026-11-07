@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Globe, Shield, Sparkles, Download, Settings, X, Wifi, WifiOff, LogOut, User } from 'lucide-react';
+import { Search, Globe, Sparkles, Download, Settings, X, LogOut } from 'lucide-react';
 import { useTranslation, Language } from '../../i18n';
 import { UserProfile, ClosetItem, Post } from '../../types';
 import { dbService } from '../../services/storage';
@@ -21,7 +21,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   onSelectItem,
   onOpenRetailers
 }) => {
-  const { language, setLanguage, t } = useTranslation();
+  const { language, setLanguage } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{ closet: ClosetItem[]; posts: Post[] }>({
     closet: [],
@@ -29,7 +29,6 @@ export const TopNav: React.FC<TopNavProps> = ({
   });
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
     const handleBeforeInstall = (e: Event) => {
@@ -37,16 +36,8 @@ export const TopNav: React.FC<TopNavProps> = ({
       setInstallPrompt(e);
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
-
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
@@ -73,11 +64,13 @@ export const TopNav: React.FC<TopNavProps> = ({
   return (
     <header className="sticky top-0 z-40 bg-warm-50/95 backdrop-blur-md border-b border-warm-border px-3 sm:px-6 py-2.5 transition-all">
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
-        {/* Brand for mobile when sidebar is hidden */}
+        {/* Official New MEFE Logo for mobile when sidebar is hidden */}
         <div className="flex items-center gap-2 md:hidden">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-terracotta-500 to-terracotta-700 flex items-center justify-center text-white font-bold shadow-terracotta text-sm">
-            M
-          </div>
+          <img
+            src="./mefe-logo.jpg"
+            alt="MEFE Logo"
+            className="w-9 h-9 rounded-xl object-cover border border-[#D8B678]/60 shadow-sm"
+          />
           <span className="font-display font-bold text-lg text-cocoa-900 tracking-tight">MEFE</span>
         </div>
 
@@ -158,7 +151,7 @@ export const TopNav: React.FC<TopNavProps> = ({
           )}
         </div>
 
-        {/* Action Controls: User Account, Language, PWA Install, Settings */}
+        {/* Action Controls: User Profile, Language, PWA Install, Settings, Sign Out */}
         <div className="flex items-center gap-1.5 sm:gap-2.5">
           {/* PWA Install Button */}
           <button
@@ -184,28 +177,25 @@ export const TopNav: React.FC<TopNavProps> = ({
             </select>
           </div>
 
-          {/* User Sign In / Switch Account Button */}
+          {/* User Profile & Sign Out */}
           {user ? (
             <div className="flex items-center gap-1.5">
-              <button
-                onClick={onOpenAuth}
-                className="flex items-center gap-1.5 px-2.5 py-1 bg-warm-100 hover:bg-warm-200 border border-warm-200 rounded-full text-xs font-semibold text-cocoa-800 transition-colors"
-                title="Switch Account"
-              >
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-warm-100 border border-warm-200 rounded-full text-xs font-semibold text-cocoa-800">
                 <img
                   src={user.photoURL}
                   alt={user.displayName}
                   className="w-4 h-4 rounded-full object-cover"
                 />
                 <span className="hidden lg:inline">{user.displayName.split(' ')[0]}</span>
-              </button>
+              </div>
 
               <button
                 onClick={onSignOut}
                 title="Sign Out"
-                className="p-1.5 rounded-full hover:bg-red-50 text-cocoa-400 hover:text-red-600 transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold transition-colors"
               >
                 <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Sign Out</span>
               </button>
             </div>
           ) : (
@@ -213,7 +203,7 @@ export const TopNav: React.FC<TopNavProps> = ({
               onClick={onOpenAuth}
               className="px-3 py-1 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-full text-xs font-bold shadow-terracotta"
             >
-              Sign In
+              Log In
             </button>
           )}
 

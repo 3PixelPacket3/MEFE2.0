@@ -4,17 +4,11 @@ import {
   User,
   Shield,
   Globe,
-  Database,
   CheckCircle2,
-  Users,
   LogOut
 } from 'lucide-react';
 import { UserProfile } from '../../types';
 import { useTranslation, Language } from '../../i18n';
-import {
-  getStoredFirebaseConfig,
-  saveFirebaseConfig,
-} from '../../services/firebase';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -30,7 +24,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   user,
   onUpdateUser,
-  onOpenAuth,
   onSignOut
 }) => {
   const { language, setLanguage, t } = useTranslation();
@@ -39,11 +32,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [isAdminRole, setIsAdminRole] = useState(user?.role === 'admin');
-
-  // Firebase Config
-  const storedFb = getStoredFirebaseConfig();
-  const [fbApiKey, setFbApiKey] = useState(storedFb?.apiKey || '');
-  const [fbProjectId, setFbProjectId] = useState(storedFb?.projectId || '');
 
   const [savedNotification, setSavedNotification] = useState(false);
 
@@ -60,18 +48,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       });
     }
 
-    // Save Firebase keys if provided
-    if (fbApiKey && fbProjectId) {
-      saveFirebaseConfig({
-        apiKey: fbApiKey.trim(),
-        authDomain: `${fbProjectId.trim()}.firebaseapp.com`,
-        projectId: fbProjectId.trim(),
-        storageBucket: `${fbProjectId.trim()}.appspot.com`,
-        messagingSenderId: '',
-        appId: ''
-      });
-    }
-
     setSavedNotification(true);
     setTimeout(() => {
       setSavedNotification(false);
@@ -83,7 +59,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-cocoa-900/60 backdrop-blur-md animate-in fade-in duration-200">
       <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-warm-border max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between pb-4 border-b border-warm-border">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
+            <img
+              src="./mefe-logo.jpg"
+              alt="MEFE"
+              className="w-8 h-8 rounded-lg object-cover border border-warm-border"
+            />
             <h2 className="font-bold text-lg text-cocoa-900">{t('settingsTitle')}</h2>
             {savedNotification && (
               <span className="text-xs text-emerald-600 font-bold flex items-center gap-1 animate-in fade-in">
@@ -100,7 +81,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         <form onSubmit={handleSaveAll} className="space-y-5 pt-4">
-          {/* User Account Bar with Switch & Sign Out */}
+          {/* User Account Bar with Sign Out */}
           {user && (
             <div className="p-3.5 bg-warm-50 rounded-2xl border border-warm-border flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -115,28 +96,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onOpenAuth();
-                  }}
-                  className="px-2.5 py-1.5 rounded-xl bg-warm-200 text-cocoa-700 font-bold text-xs hover:bg-warm-300 transition-colors"
-                >
-                  Switch User
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onSignOut();
-                  }}
-                  className="px-2.5 py-1.5 rounded-xl bg-red-50 text-red-600 font-bold text-xs hover:bg-red-100 transition-colors"
-                >
-                  Sign Out
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onSignOut();
+                }}
+                className="px-3 py-1.5 rounded-xl bg-red-50 text-red-600 font-bold text-xs hover:bg-red-100 flex items-center gap-1.5 transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign Out</span>
+              </button>
             </div>
           )}
 
@@ -202,41 +172,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
-          {/* Firebase Credentials Configuration (Optional Cloud Sync) */}
-          <div className="space-y-2.5 pt-2 border-t border-warm-100">
-            <h3 className="text-xs font-bold text-cocoa-800 uppercase tracking-wider flex items-center gap-1.5">
-              <Database className="w-4 h-4 text-terracotta-500" />
-              <span>{t('firebaseConfig')}</span>
-            </h3>
-            <p className="text-[11px] text-cocoa-400">
-              MEFE runs 100% locally with high-performance IndexedDB/LocalStorage. Optional cloud backup can be configured below.
-            </p>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-[10px] font-semibold text-cocoa-600 mb-0.5">API Key</label>
-                <input
-                  type="text"
-                  value={fbApiKey}
-                  onChange={(e) => setFbApiKey(e.target.value)}
-                  placeholder="AIzaSy..."
-                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-warm-border bg-warm-50 text-cocoa-900"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-semibold text-cocoa-600 mb-0.5">Project ID</label>
-                <input
-                  type="text"
-                  value={fbProjectId}
-                  onChange={(e) => setFbProjectId(e.target.value)}
-                  placeholder="mefe-wardrobe"
-                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-warm-border bg-warm-50 text-cocoa-900"
-                />
-              </div>
+          {/* Automatic Save Status Indicator */}
+          <div className="p-3.5 bg-emerald-50/70 rounded-2xl border border-emerald-200/80 flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+            <div>
+              <span className="text-xs font-bold text-emerald-900 block">
+                Automatic Data Persistence Active
+              </span>
+              <span className="text-[11px] text-emerald-700">
+                Your closet items, 3D avatar settings, outfits, and mood journals are saved automatically to your account.
+              </span>
             </div>
           </div>
 
-          {/* Role Switching for Testing */}
+          {/* Role Toggle for Admin Preview */}
           {user && (
             <div className="p-3 bg-warm-50 rounded-2xl border border-warm-border flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -246,7 +195,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     {t('demoModeToggle')}
                   </span>
                   <span className="text-[10px] text-cocoa-400">
-                    Switch between User and Executive Admin views
+                    Enable or hide Executive Admin Dashboard access
                   </span>
                 </div>
               </div>

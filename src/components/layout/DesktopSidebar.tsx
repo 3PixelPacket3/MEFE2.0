@@ -9,11 +9,9 @@ import {
   ShoppingBag,
   Shield,
   Settings,
-  LogOut,
-  Users
+  LogOut
 } from 'lucide-react';
 import { ActiveTab, MenuSubView, UserProfile } from '../../types';
-import { useTranslation } from '../../i18n';
 
 interface DesktopSidebarProps {
   activeTab: ActiveTab;
@@ -34,8 +32,6 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
   onOpenAuth,
   onSignOut
 }) => {
-  const { t } = useTranslation();
-
   const mainNavItems = [
     { id: 'social' as ActiveTab, label: 'Social Feed', icon: Home },
     { id: 'closet' as ActiveTab, label: 'My Closet', icon: Sparkles },
@@ -55,10 +51,14 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
   return (
     <aside className="hidden md:flex flex-col w-64 lg:w-72 h-screen sticky top-0 bg-white/80 backdrop-blur-md border-r border-warm-border p-4 justify-between select-none">
       <div className="space-y-6">
-        {/* Brand Header */}
+        {/* Official MEFE Golden Hanger Brand Header */}
         <div className="flex items-center gap-3 px-2 py-1">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-terracotta-500 to-terracotta-700 flex items-center justify-center text-white shadow-terracotta font-bold text-lg">
-            M
+          <div className="w-11 h-11 rounded-2xl overflow-hidden border border-amber-300/60 shadow-warm-sm bg-[#FAF5EB] flex items-center justify-center shrink-0">
+            <img
+              src="./mefe-logo.jpg"
+              alt="MEFE Logo"
+              className="w-full h-full object-cover"
+            />
           </div>
           <div>
             <h1 className="font-display font-bold text-xl text-cocoa-900 tracking-tight leading-none">
@@ -134,7 +134,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
         </div>
       </div>
 
-      {/* User Profile Card & Sign In / Sign Out Controls */}
+      {/* User Profile Card & Sign Out Controls (No Account Switching) */}
       {user ? (
         <div className="p-3 bg-warm-50 rounded-2xl border border-warm-border space-y-2.5">
           <div className="flex items-center justify-between">
@@ -159,18 +159,11 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
             </button>
           </div>
 
-          {/* Account Actions: Switch User & Sign Out */}
-          <div className="flex items-center gap-1.5 pt-1 border-t border-warm-border">
-            <button
-              onClick={onOpenAuth}
-              className="flex-1 py-1 px-2 rounded-xl bg-warm-200/70 hover:bg-warm-200 text-cocoa-700 font-semibold text-[11px] flex items-center justify-center gap-1 transition-colors"
-            >
-              <Users className="w-3.5 h-3.5 text-terracotta-600" />
-              <span>Switch User</span>
-            </button>
+          {/* Account Actions: Sign Out Only */}
+          <div className="pt-1 border-t border-warm-border">
             <button
               onClick={onSignOut}
-              className="py-1 px-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-[11px] flex items-center justify-center gap-1 transition-colors"
+              className="w-full py-1.5 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
               title="Sign Out"
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -183,7 +176,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
           onClick={onOpenAuth}
           className="w-full py-3 rounded-2xl bg-terracotta-500 hover:bg-terracotta-600 text-white font-bold text-xs shadow-terracotta transition-all"
         >
-          Sign In / Create Account
+          Log In / Sign Up
         </button>
       )}
     </aside>
